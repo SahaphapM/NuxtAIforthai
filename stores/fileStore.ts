@@ -8,25 +8,12 @@ export const useFileStore = defineStore("fileStore", {
     file: null as File | null,
     SRurl: "",
     caption: null as any,
+    image: null as any,
+    isLoading: false,
   }),
   getters: {
     getFileUrl: (state) => (state.file ? URL.createObjectURL(state.file) : ""),
-    getSRfileUrl: (state) => {
-      if (state.SRurl && state.SRurl.length > 0) {
-        axios
-          .get(state.SRurl, { headers: { Apikey: state.apikey } })
-          .then((response) => {
-            let file = new Blob([response.data], { type: "image/png" });
-            console.log(URL.createObjectURL(file));
-            return URL.createObjectURL(file);
-          })
-          .catch((error) => {
-            console.error(error);
-          });
-      } else {
-        return "";
-      }
-    },
+    getSRfileUrl: (state) => state.image,
   },
   actions: {
     handleFileChange(event: Event) {
@@ -72,6 +59,24 @@ export const useFileStore = defineStore("fileStore", {
           { headers }
         );
         this.SRurl = response.data.url;
+        console.log(this.SRurl);
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    async getImageWithHeader() {
+      if (!this.SRurl) return;
+
+      try {
+        const response = await axios.get(this.SRurl, {
+          headers: {
+            Apikey: this.apikey,
+          },
+          responseType: "blob",
+        });
+        const imageUrl = URL.createObjectURL(response.data);
+
+        this.image = imageUrl;
       } catch (error) {
         console.error(error);
       }
