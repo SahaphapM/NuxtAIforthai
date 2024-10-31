@@ -8,12 +8,18 @@ export const useFileStore = defineStore("fileStore", {
     file: null as File | null,
     SRurl: "",
     caption: null as any,
-    image: null as any,
+    imageSRurl: null as any,
+    imageSR: null as File | null,
     isLoading: false,
+    detectionResult: null as any,
+    heatmapResult: null as any,
   }),
   getters: {
+    getFile: (state) => state.file,
     getFileUrl: (state) => (state.file ? URL.createObjectURL(state.file) : ""),
-    getSRfileUrl: (state) => state.image,
+    getSRfile: (state) => state.imageSR,
+    getSRfileUrl: (state) => state.imageSRurl,
+    getDetectionResult: (s) => s.detectionResult,
   },
   actions: {
     handleFileChange(event: Event) {
@@ -64,7 +70,7 @@ export const useFileStore = defineStore("fileStore", {
         console.error(error);
       }
     },
-    async getImageWithHeader() {
+    async fetchImageWithHeader() {
       if (!this.SRurl) return;
 
       try {
@@ -74,11 +80,59 @@ export const useFileStore = defineStore("fileStore", {
           },
           responseType: "blob",
         });
+        this.imageSR = response.data;
         const imageUrl = URL.createObjectURL(response.data);
-
-        this.image = imageUrl;
+        this.imageSRurl = imageUrl;
       } catch (error) {
         console.error(error);
+      }
+    },
+    async detectHuman(file: File) {
+      const formData = new FormData();
+      formData.append("src_img", file);
+      formData.append("json_export", "true");
+      formData.append("img_export", "true");
+
+      try {
+        const response = await axios.post(
+          "https://api.aiforthai.in.th/person/human_detect/",
+          formData,
+          {
+            headers: {
+              Apikey: this.apikey,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+
+        this.detectionResult = response.data.human_img;
+        console.log(this.detectionResult);
+      } catch (error) {
+        console.error("Error in human detection:", error);
+      }
+    },
+    async detectHeat(file: File) {
+      const formData = new FormData();
+      formData.append("src_img", file);
+      formData.append("json_export", "true");
+      formData.append("img_export", "true");
+
+      try {
+        const response = await axios.post(
+          "https://api.aiforthai.in.th/person/heat_detect/",
+          formData,
+          {
+            headers: {
+              Apikey: this.apikey,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+
+        this.heatmapResult = response.data.heat_img;
+        console.log(this.detectionResult);
+      } catch (error) {
+        console.error("Error in motion heatmap:", error);
       }
     },
   },

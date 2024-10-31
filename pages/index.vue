@@ -1,19 +1,31 @@
 <template>
-  <div>
-    <br />
-    <input type="file" @change="store.handleFileChange" />
-    <button @click="handleSubmit">Submit File Cap</button>
-    <div><img :src="store.getFileUrl" /></div>
+  <div class="page-container">
+    <h1>AI For Thai</h1>
+    <div>
+      <input type="file" @change="store.handleFileChange" />
+      <button class="btn" @click="handleSubmit">Submit File Cap</button>
+    </div>
+    <div class="container"><img :src="store.getFileUrl" /></div>
     <div>{{ store.caption ?? "" }}</div>
     <br />
     <br />
     <div v-if="store.isLoading" class="loader"></div>
-    <div v-if="!store.isLoading" class="flex">
-      Result Image After Super Resolution
-    </div>
     <br />
     <br />
-    <div><img :src="store.getSRfileUrl" /></div>
+    <section>
+      <div>After Super Resolution:</div>
+      <div class="container">
+        <img :src="store.getSRfileUrl" />
+      </div>
+    </section>
+    <section>
+      <div>Human detection:</div>
+      <div class="container"><img :src="store.detectionResult" /></div>
+    </section>
+    <section>
+      <div>Human Heatmap:</div>
+      <div class="container"><img :src="store.heatmapResult" /></div>
+    </section>
   </div>
 </template>
 
@@ -21,22 +33,20 @@
 const store = useFileStore();
 
 async function handleSubmit() {
-  // await store.submitFileCap();
+  store.isLoading = true;
   if (store.file) {
-    store.isLoading = true;
     await store.submitFileSupResolution();
-    store.isLoading = false;
+    await store.detectHuman(store.getFile!);
+    await store.detectHeat(store.getFile!);
   }
   if (store.SRurl) {
-    store.isLoading = true;
-    await store.getImageWithHeader();
-    store.isLoading = false;
+    await store.fetchImageWithHeader();
   }
+  store.isLoading = false;
 }
 </script>
 
 <style scoped>
-/* HTML: <div class="loader"></div> */
 .loader {
   width: 120px;
   height: 20px;
@@ -48,9 +58,36 @@ async function handleSubmit() {
     background-size: 100%;
   }
 }
-.flex {
-  display: flex;
-  justify-content: center;
+
+* {
+  font-family: Verdana;
+}
+
+.btn {
+  padding: 0.5rem;
+  border: transparent;
+  border-radius: 5px;
+}
+.btn:hover {
+  background: rgb(45, 122, 223);
+  cursor: pointer;
+}
+
+h1 {
+  background: linear-gradient(90deg, #f00, #f0f);
+  background-clip: text;
+  color: transparent;
   text-align: center;
+}
+
+.page-container {
+  margin: 0 auto;
+  width: 1280px;
+}
+.container {
+  display: flex;
+  margin: 0 auto;
+  width: 400px;
+  height: 400px;
 }
 </style>
